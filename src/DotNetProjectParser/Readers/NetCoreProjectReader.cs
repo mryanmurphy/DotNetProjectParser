@@ -67,10 +67,10 @@ namespace DotNetProjectParser.Readers
             project.FullPath = projectFile.FullName;
             project.DirectoryPath = projectFile.Directory?.FullName;
             project.ProjectXml = xml;
-          
 
-         XElement propertiesSection = xml.Root.Elements().FirstOrDefault(x =>
-                x.Name.LocalName == XmlNames.PropertyGroup && x.Elements().Any(y => y.Name.LocalName == XmlNames.TargetFrameworkVersion));
+
+            XElement propertiesSection = xml.Root.Elements().FirstOrDefault(x =>
+                   x.Name.LocalName == XmlNames.PropertyGroup && x.Elements().Any(y => y.Name.LocalName == XmlNames.TargetFrameworkVersion));
 
             if (propertiesSection != null)
             {
@@ -198,7 +198,7 @@ namespace DotNetProjectParser.Readers
         {
             Debug.Assert(xml.Root != null, "xml.Root != null");
             var list = new List<ProjectItem>();
-            
+
             var filesUnderProject = GetFilesUnderProject(project);
             foreach (FileInfo fileInfo in filesUnderProject)
             {
@@ -210,18 +210,32 @@ namespace DotNetProjectParser.Readers
             {
                 foreach (XElement xElement in itemsSection.Elements())
                 {
+                    string itemType = xElement.Name.LocalName;
+
                     var remove = xElement.Attributes().FirstOrDefault(x => x.Name.LocalName == XmlNames.Remove);
                     if (remove != null)
                     {
-                        var index = list.FindIndex(x => x.Include == remove.Value);
-                        list.RemoveAt(index);
+                        string pattern = Regex.Escape(remove.Value);
+                        pattern = pattern.Replace(@"\*\*\\\*", ".+") // Core.Test\**\* -> Core\.Test\\.+
+                                         .Replace(@"\*\*", ".+")     // TestResults\** -> TestResults\\.+
+                                         .Replace(@"\\\*\.", @"\\.+\."); // Resources\SqlScripts\*.sql -> Resources\\SqlScripts\\.+\.sql
+
+
+                        var allToRemove = list.Where(x => Regex.IsMatch(x.Include, pattern) && x.ItemType.Equals(itemType, StringComparison.OrdinalIgnoreCase)).ToArray();
+
+                        foreach (var toRemove in allToRemove)
+                        {
+                            var index = list.IndexOf(toRemove);
+                            list.RemoveAt(index);
+                        }
+
                         continue;
                     }
 
                     ProjectItem item = new ProjectItem
                     {
                         Project = project,
-                        ItemType = xElement.Name.LocalName,
+                        ItemType = itemType,
                         Include = xElement.Attributes().FirstOrDefault(x => x.Name.LocalName == XmlNames.Include)?.Value
                     };
                     if (item.Include == null)
@@ -233,7 +247,7 @@ namespace DotNetProjectParser.Readers
                         item.Include = xElement.Attributes().FirstOrDefault(x => x.Name.LocalName == XmlNames.Update)?.Value;
                         //todo - figure out WTF is 'Update'
                     }
-                 
+
                     ResolveInclude(project, item);
 
                     item.CopyToOutputDirectory = xElement.Elements().FirstOrDefault(x => x.Name.LocalName == XmlNames.CopyToOutputDirectory)?.Value;
@@ -270,7 +284,7 @@ namespace DotNetProjectParser.Readers
 
         private static IEnumerable<FileInfo> GetFilesUnderProject(Project project)
         {
-            var filesUnderTheProject = new DirectoryInfo(project.DirectoryPath).EnumerateFiles("*.*",SearchOption.AllDirectories).Where(x =>
+            var filesUnderTheProject = new DirectoryInfo(project.DirectoryPath).EnumerateFiles("*.*", SearchOption.AllDirectories).Where(x =>
                 x.Directory != null
                 && !x.Directory.FullName.Contains(Path.DirectorySeparatorChar + "obj")
                 && !x.Directory.FullName.Contains(Path.DirectorySeparatorChar + "bin")
@@ -284,13 +298,13 @@ namespace DotNetProjectParser.Readers
 
 
             filesUnderTheProject = filesUnderTheProject.Where(x =>
-               ! Regex.IsMatch(x.Name, @"\..*proj$")
+               !Regex.IsMatch(x.Name, @"\..*proj$")
             );
-            
-            
+
+
             string patternToExcludeFoldersStartingWithDot = $@"\{Path.DirectorySeparatorChar}\..*\{Path.DirectorySeparatorChar}";
-            
-            filesUnderTheProject = filesUnderTheProject.Where(x => 
+
+            filesUnderTheProject = filesUnderTheProject.Where(x =>
                 !Regex.IsMatch(x.FullName, patternToExcludeFoldersStartingWithDot)
             );
 
