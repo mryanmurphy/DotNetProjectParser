@@ -64,6 +64,11 @@ namespace DotNetProjectParser
         public string TargetFramework { get; internal set; }
 
         /// <summary>
+        /// The target frameworks for multitargeting
+        /// </summary>
+        public IReadOnlyCollection<string> TargetFrameworks { get; internal set; }
+
+        /// <summary>
         /// The extension of the generated assembly
         /// </summary>
         public string TargetExtension { get; internal set; }

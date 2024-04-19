@@ -132,6 +132,11 @@
             The target framework
             </summary>
         </member>
+        <member name="P:DotNetProjectParser.Project.TargetFrameworks">
+            <summary>
+            The target frameworks for multitargeting
+            </summary>
+        </member>
         <member name="P:DotNetProjectParser.Project.TargetExtension">
             <summary>
             The extension of the generated assembly

@@ -19,6 +19,7 @@ namespace DotNetProjectParser.Readers
             public static string OutputType { get; } = "OutputType";
             public static string AssemblyName { get; } = "AssemblyName";
             public static string TargetFrameworkVersion { get; } = "TargetFramework";
+            public static string TargetFrameworkVersions { get; } = "TargetFrameworks";
             public static string ItemGroup { get; } = "ItemGroup";
             public static string Include { get; } = "Include";
             public static string Update { get; } = "Update";
@@ -70,13 +71,14 @@ namespace DotNetProjectParser.Readers
 
 
             XElement propertiesSection = xml.Root.Elements().FirstOrDefault(x =>
-                   x.Name.LocalName == XmlNames.PropertyGroup && x.Elements().Any(y => y.Name.LocalName == XmlNames.TargetFrameworkVersion));
+                   x.Name.LocalName == XmlNames.PropertyGroup && x.Elements().Any(y => y.Name.LocalName == XmlNames.TargetFrameworkVersion || y.Name.LocalName == XmlNames.TargetFrameworkVersions));
 
             if (propertiesSection != null)
             {
                 project.AssemblyName = propertiesSection.GetByLocalName(XmlNames.AssemblyName)?.Value;
                 project.OutputType = propertiesSection.GetByLocalName(XmlNames.OutputType)?.Value;
                 project.TargetFramework = propertiesSection.GetByLocalName(XmlNames.TargetFrameworkVersion)?.Value;
+                project.TargetFrameworks = propertiesSection.GetByLocalName(XmlNames.TargetFrameworkVersions)?.Value.Split(';').ToList();
             }
             if (project.AssemblyName == null)
             {
