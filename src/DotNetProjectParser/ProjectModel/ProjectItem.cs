@@ -29,6 +29,11 @@ namespace DotNetProjectParser
         public string Include { get; internal set; }
 
         /// <summary>
+        /// The version of the item
+        /// </summary>
+        public string Version { get; internal set; }
+
+        /// <summary>
         /// The absolute path of the included item
         /// </summary>
         public string ResolvedIncludePath { get; internal set; }

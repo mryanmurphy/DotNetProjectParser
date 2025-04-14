@@ -26,6 +26,7 @@ namespace DotNetProjectParser.Readers
             public static string Remove { get; } = "Remove";
             public static string CopyToOutputDirectory { get; } = "CopyToOutputDirectory";
             public static string Condition { get; } = "Condition";
+            public static string Version { get; } = "Version";
 
             public const string PlatformTarget = "PlatformTarget";
             public const string Optimize = "Optimize";
@@ -238,7 +239,8 @@ namespace DotNetProjectParser.Readers
                     {
                         Project = project,
                         ItemType = itemType,
-                        Include = xElement.Attributes().FirstOrDefault(x => x.Name.LocalName == XmlNames.Include)?.Value
+                        Include = xElement.Attributes().FirstOrDefault(x => x.Name.LocalName == XmlNames.Include)?.Value,
+                        Version = xElement.Attributes().FirstOrDefault(x => x.Name.LocalName == XmlNames.Version)?.Value,
                     };
                     if (item.Include == null)
                     {
@@ -316,6 +318,8 @@ namespace DotNetProjectParser.Readers
 
         private static void ResolveInclude(Project project, ProjectItem item)
         {
+            if (item.ItemType == "PackageReference") return;
+
             if (item.Include != null)
             {
                 item.ResolvedIncludePath = Path.Combine(project.DirectoryPath, item.Include);
